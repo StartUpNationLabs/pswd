@@ -21,7 +21,7 @@ import { wordlist } from '@/data/wordlist';
 import styles from './app.module.css';
 import { cn } from '@/helpers/styles';
 import { formatSeconds } from '@/helpers/time';
-import { useCrackTime } from '@/components/app/useCrackTime.ts';
+import { useCrackTime } from '@/hooks/useCrackTime.ts';
 
 const WORDLIST = wordlist;
 
@@ -263,11 +263,14 @@ export function App() {
     generatePassword();
   }, [activeTab, generatePassword]);
 
-  const calculatedCrackTime = useCrackTime(password);
+  const {
+    crackTime: calculatedCrackTime,
+    loading: calculatingCrackTimeLoading,
+  } = useCrackTime(password);
   let strength = 0;
   let crackTime = '';
 
-  if (calculatedCrackTime) {
+  if (calculatedCrackTime && !calculatingCrackTimeLoading) {
     crackTime = formatSeconds(
       calculatedCrackTime.crack_times_seconds
         .offline_fast_hashing_1e10_per_second as number,
@@ -275,7 +278,7 @@ export function App() {
 
     strength = calculatedCrackTime.score + 1;
   } else {
-    crackTime = '';
+    crackTime = '...Loading';
     strength = 0;
   }
   const strenthColor = [
@@ -571,7 +574,7 @@ export function App() {
                     min="3"
                     type="number"
                     value={pinLength}
-                    onChange={e => setPinLenght(Number(e.target.value))}
+                    onChange={e => setPinLength(Number(e.target.value))}
                   />
 
                   <input

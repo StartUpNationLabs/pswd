@@ -3,8 +3,9 @@ import zxcvbn from 'zxcvbn';
 
 export const useCrackTime = (password: string) => {
   const [crackTime, setCrackTime] = useState<zxcvbn.ZXCVBNResult | null>(null);
-
-  const delay = password.length > 55 ? 30 : 5; // Delay is proportional to the password length
+  const [loading, setLoading] = useState(false);
+  console.log('loading', loading);
+  const delay = password.length > 40 ? 100 : 5;
 
   // Memoize the worker to ensure it's created only once
   const worker = useMemo(() => {
@@ -17,6 +18,7 @@ export const useCrackTime = (password: string) => {
   useEffect(() => {
     const handleMessage = (e: MessageEvent<zxcvbn.ZXCVBNResult>) => {
       setCrackTime(e.data);
+      setLoading(false);
     };
 
     worker.addEventListener('message', handleMessage);
@@ -34,6 +36,7 @@ export const useCrackTime = (password: string) => {
 
     const handler = setTimeout(() => {
       worker.postMessage(password);
+      setLoading(true);
     }, delay);
 
     return () => {
@@ -47,5 +50,8 @@ export const useCrackTime = (password: string) => {
     };
   }, [worker]);
 
-  return crackTime;
+  return {
+    crackTime,
+    loading,
+  };
 };

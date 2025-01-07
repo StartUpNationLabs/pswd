@@ -7,6 +7,6 @@ import Footer from '@/components/footer.astro';
 
 <Layout>
   <Hero />
-  <App client:load />
+  <App client:only="react" />
   <Footer />
 </Layout>
