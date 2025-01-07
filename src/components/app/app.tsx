@@ -1,13 +1,11 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  FaRegCopy,
   FaArrowRotateLeft,
   FaCheck,
+  FaRegCopy,
   FaRegEye,
   FaRegEyeSlash,
 } from 'react-icons/fa6';
-import zxcvbn from 'zxcvbn';
-
 import { Container } from '../container';
 
 import { useCopy } from '@/hooks/use-copy';
@@ -23,6 +21,7 @@ import { wordlist } from '@/data/wordlist';
 import styles from './app.module.css';
 import { cn } from '@/helpers/styles';
 import { formatSeconds } from '@/helpers/time';
+import { useCrackTime } from '@/components/app/useCrackTime.ts';
 
 const WORDLIST = wordlist;
 
@@ -35,7 +34,6 @@ export function App() {
     'pswd-show-password',
     true,
   );
-
   const [password, setPassword] = useState('');
   const [length, setLength] = useLocalStorage('pswd-length', 12);
   const [includeUpper, setIncludeUpper] = useLocalStorage(
@@ -66,6 +64,8 @@ export function App() {
     'pswd-exclude-symbols',
     '',
   );
+
+  const [base64, setBase64] = useLocalStorage('pswd-base64', false);
 
   const [wordCount, setWordCount] = useLocalStorage('pswd-word-count', 6);
   const [separator, setSeparator] = useLocalStorage('pswd-separator', 'space');
@@ -163,7 +163,11 @@ export function App() {
       }
 
       const newPassword = passwordCharacters.join('');
-      setPassword(newPassword);
+      if (base64) {
+        setPassword(btoa(newPassword));
+      } else {
+        setPassword(newPassword);
+      }
     } else if (activeTab === 'diceware') {
       if (wordlist.length === 0) {
         alert('Wordlist is empty. Please provide a valid wordlist.');
@@ -182,14 +186,12 @@ export function App() {
 
       if (randomCapitalization) {
         words = words.map(word => {
-          const newWord = String(word)
+          return String(word)
             .split('')
             .map(letter =>
               Math.random() > 0.5 ? letter.toLowerCase() : letter.toUpperCase(),
             )
             .join('');
-
-          return newWord;
         });
       }
 
@@ -254,14 +256,28 @@ export function App() {
     capitalize,
     excludeSymbols,
     wordlist,
+    base64,
   ]);
 
   useEffect(() => {
     generatePassword();
   }, [activeTab, generatePassword]);
 
-  const [crackTime, setCrackTime] = useState('');
-  const [strength, setStrength] = useState(0);
+  const calculatedCrackTime = useCrackTime(password);
+  let strength = 0;
+  let crackTime = '';
+
+  if (calculatedCrackTime) {
+    crackTime = formatSeconds(
+      calculatedCrackTime.crack_times_seconds
+        .offline_fast_hashing_1e10_per_second as number,
+    );
+
+    strength = calculatedCrackTime.score + 1;
+  } else {
+    crackTime = '';
+    strength = 0;
+  }
   const strenthColor = [
     'transparent',
     '#ef4444',
@@ -270,27 +286,8 @@ export function App() {
     '#65a30d',
     '#22c55e',
   ][strength];
-
-  useEffect(() => {
-    if (password) {
-      const result = zxcvbn(password);
-
-      setCrackTime(
-        formatSeconds(
-          result.crack_times_seconds
-            .offline_fast_hashing_1e10_per_second as number,
-        ),
-      );
-
-      setStrength(result.score + 1);
-    } else {
-      setCrackTime('');
-      setStrength(0);
-    }
-  }, [password]);
-
   return (
-    <Container>
+    <Container wide={true}>
       <div className={styles.generator}>
         <div className={styles.tabs}>
           <button
@@ -376,7 +373,7 @@ export function App() {
                 <div className={styles.inputs}>
                   <input
                     id="length"
-                    max="90"
+                    max="128"
                     min="3"
                     type="number"
                     value={length}
@@ -384,7 +381,7 @@ export function App() {
                   />
 
                   <input
-                    max="90"
+                    max="128"
                     min="3"
                     type="range"
                     value={length}
@@ -436,6 +433,15 @@ export function App() {
                   onChange={e => setExcludeSimilar(e.target.checked)}
                 />
                 Exclude Similar Characters (e.g., l, 1, O, 0)
+              </label>
+
+              <label className={styles.checkbox}>
+                <input
+                  checked={base64}
+                  type="checkbox"
+                  onChange={e => setBase64(e.target.checked)}
+                />
+                Base64 encode
               </label>
 
               <div className={styles.custom}>

@@ -1,0 +1,17 @@
+{
+  "name": "zxcvbn-wasm",
+  "type": "module",
+  "version": "0.1.0",
+  "files": [
+    "zxcvbn_wasm_bg.wasm",
+    "zxcvbn_wasm.js",
+    "zxcvbn_wasm_bg.js",
+    "zxcvbn_wasm.d.ts"
+  ],
+  "main": "zxcvbn_wasm.js",
+  "types": "zxcvbn_wasm.d.ts",
+  "sideEffects": [
+    "./zxcvbn_wasm.js",
+    "./snippets/*"
+  ]
+}
