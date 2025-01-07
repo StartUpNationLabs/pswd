@@ -33,6 +33,9 @@ export const useCrackTime = (password: string) => {
       setCrackTime(null);
       return;
     }
+    if (loading) {
+      return;
+    }
 
     const handler = setTimeout(() => {
       worker.postMessage(password);
